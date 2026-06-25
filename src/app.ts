@@ -4,6 +4,7 @@ import "dotenv/config";
 import { AppDataSource } from "./data-source.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import authRouter from "./routes/auth.js";
 
 try {
   await AppDataSource.initialize();
@@ -26,7 +27,7 @@ app.use(
 );
 
 // routes
-// app.use("/auth" /* authRouter */);
+app.use("/auth", authRouter);
 
 app.listen(port, () => {
   console.log(`Server has started on ${port}`);
