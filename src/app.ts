@@ -5,6 +5,7 @@ import { AppDataSource } from "./data-source.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import authRouter from "./routes/auth.js";
+import errorMiddleware from "./middlewares/error-middleware.js";
 
 try {
   await AppDataSource.initialize();
@@ -28,6 +29,8 @@ app.use(
 
 // routes
 app.use("/auth", authRouter);
+
+app.use(errorMiddleware);
 
 app.listen(port, () => {
   console.log(`Server has started on ${port}`);
