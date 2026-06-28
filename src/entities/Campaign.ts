@@ -23,9 +23,12 @@ export class Campaign {
   })
   title!: string;
 
+  @Column({ type: "varchar", nullable: true })
+  imageUrl?: string | null;
+
   // JSONB Content from tiptap, maybe will somehow define more properly later
   @Column({ type: "jsonb", nullable: true })
-  content!: object;
+  content?: object;
 
   @ManyToOne(() => User, (user) => user.masterCampaigns)
   master!: User;

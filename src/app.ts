@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import authRouter from "./routes/auth.js";
 import userRouter from "./routes/users.js";
+import campaignRouter from "./routes/campaigns.js";
 import errorMiddleware from "./middlewares/error-middleware.js";
 
 try {
@@ -32,6 +33,7 @@ app.use(
 // routes
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
+app.use("/campaigns", campaignRouter);
 
 app.use(errorMiddleware);
 
