@@ -14,7 +14,8 @@ export const AppDataSource = new DataSource({
   password: process.env.DATABASE_PASSWORD || "admin",
   database: process.env.DATABASE_NAME! || "Monolith",
   synchronize: true,
-  logging: true,
+  // logging: true,
+  logging: false,
   entities: [User, Token, Campaign, QuestCategory, Quest],
   migrations: [],
 });

@@ -48,9 +48,19 @@ export type CampaignContextResponse = z.infer<
 export const CampaignContentResponseSchema = z.object({
   data: z.object({
     id: z.string(),
-    content: TiptapContentSchema, // Tiptap JSON
+    content: TiptapContentSchema.nullable().optional(), // Tiptap JSON
   }),
 });
 export type CampaignContentResponse = z.infer<
   typeof CampaignContentResponseSchema
 >;
+
+export const CreateCampaignSchema = z.object({
+  title: z.string().min(1, "Title is required").max(100, "Title is too long"),
+  imageUrl: z.string().url("Invalid image URL").nullable().optional(),
+  content: TiptapContentSchema.nullable().optional(),
+});
+export type CreateCampaignDTO = z.infer<typeof CreateCampaignSchema>;
+
+export const UpdateCampaignSchema = CreateCampaignSchema.partial();
+export type UpdateCampaignDTO = z.infer<typeof UpdateCampaignSchema>;

@@ -28,7 +28,7 @@ export class Campaign {
 
   // JSONB Content from tiptap, maybe will somehow define more properly later
   @Column({ type: "jsonb", nullable: true })
-  content?: object;
+  content?: object | null;
 
   @ManyToOne(() => User, (user) => user.masterCampaigns)
   master!: User;

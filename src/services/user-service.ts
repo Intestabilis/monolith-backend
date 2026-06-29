@@ -21,7 +21,9 @@ const userService = {
       where: [{ username }, { email }],
     });
     if (possibleUser)
-      throw new BadRequestError("User with this email is already exist");
+      throw new BadRequestError(
+        "User with this email or username is already exist",
+      );
     // CHANGE salt
     const passwordHash = await bcrypt.hash(password, 2);
     const activationLink = uuidv4();
@@ -47,7 +49,7 @@ const userService = {
 
   loginUser: async function (email: string, password: string) {
     const user = await userRepository.findOneBy({ email });
-    if (!user) throw new BadRequestError("User with this email does not exist");
+    if (!user) throw new NotFoundError("User with this email does not exist");
 
     const isPasswordEqual = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordEqual) throw new BadRequestError("Password is incorrect");
@@ -70,7 +72,7 @@ const userService = {
 
   activateUser: async function (activationLink: string) {
     const user = await userRepository.findOneBy({ activationLink });
-    if (!user) throw new BadRequestError("No user with this activation link");
+    if (!user) throw new NotFoundError("No user with this activation link");
     user.isActivated = true;
     await userRepository.update(user.id, { isActivated: user.isActivated });
   },

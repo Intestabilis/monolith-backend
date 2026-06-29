@@ -40,6 +40,56 @@ export async function getUserMasterCampaigns(
   }
 }
 
+export async function createCampaign(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id: userId } = req.user!;
+
+    const campaignData = req.body;
+
+    const campaign = await campaignService.createCampaign(userId, campaignData);
+    res.status(201).json(campaign);
+  } catch (err) {
+    next(err);
+  }
+}
+export async function updateCampaign(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.params;
+    const campaignData = req.body;
+    console.log(id);
+    // REVIEW once again type assertion
+    const campaign = await campaignService.updateCampaign(
+      id as string,
+      campaignData,
+    );
+    res.json(campaign);
+  } catch (err) {
+    next(err);
+  }
+}
+export async function deleteCampaign(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.params;
+    // REVIEW guess what type assertion
+    await campaignService.deleteCampaign(id as string);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getCampaignContext(
   req: Request,
   res: Response,
