@@ -12,11 +12,13 @@ import {
   getUserMasterCampaigns,
   getUserPlayerCampaigns,
   updateCampaign,
+  uploadCover,
 } from "../controllers/campaign-controller.js";
 import {
   CreateCampaignSchema,
   UpdateCampaignSchema,
 } from "../schemas/campaign.schema.js";
+import { uploadCampaignCover } from "../middlewares/upload-middleware.js";
 
 const router = Router();
 
@@ -40,6 +42,15 @@ router.get(
   validate({ params: { id: z.uuid() } }),
   requireCampaignRole(["master", "player"]),
   getCampaignContent,
+);
+
+// CHANGE add files validation with zod
+router.post(
+  "/:id/cover",
+  authMiddleware,
+  requireCampaignRole(["master"]),
+  uploadCampaignCover.single("image"),
+  uploadCover,
 );
 
 router.patch(

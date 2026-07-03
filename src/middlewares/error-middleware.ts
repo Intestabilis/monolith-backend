@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import ApiError from "../exceptions/api-error.js";
 import { ZodError, z } from "zod";
+import multer from "multer";
 
 export default function errorMiddleware(
   err: Error,
@@ -20,6 +21,14 @@ export default function errorMiddleware(
       //   message: issue.message,
       // })),
       errors: z.flattenError(err),
+    });
+  }
+
+  // REVIEW maybe in multer middleware should throw some error with custom code like "UNSUPPORTED_FORMAT" and then handle it here similar to this one
+  // for better consistency
+  if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({
+      message: "File size is too large",
     });
   }
 

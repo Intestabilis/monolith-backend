@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import campaignService from "../services/campaign-service.js";
 import type { CampaignRole } from "../schemas/campaign.schema.js";
+import BadRequestError from "../exceptions/bad-request.js";
+import CloudinaryStorageService from "../services/storage-service.js";
 
 export async function getUserCampaigns(
   req: Request,
@@ -116,6 +118,37 @@ export async function getCampaignContent(
     // REVIEW I don't quite like type assertion there
     const result = await campaignService.getCampaignContent(id as string);
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function uploadCover(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      throw new BadRequestError("There is no image in request!");
+    }
+
+    const imageUrl = await CloudinaryStorageService.uploadImage(
+      file.buffer,
+      file.originalname,
+      file.mimetype,
+      { folder: "campaigns", entityId: id as string },
+    );
+
+    // REVIEW lowkey stinks (and maybe should divide update method in different methods like updateTitle, updateContent etc at all), but will do for now
+    const updatedCampaign = await campaignService.updateCampaign(id as string, {
+      imageUrl: imageUrl,
+    });
+
+    return res.json(updatedCampaign);
   } catch (err) {
     next(err);
   }

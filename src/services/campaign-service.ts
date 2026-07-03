@@ -8,6 +8,7 @@ import type {
   CreateCampaignDTO,
   UpdateCampaignDTO,
 } from "../schemas/campaign.schema.js";
+import CloudinaryStorageService from "./storage-service.js";
 
 // REVIEW - Google said that Tiptap might crash with getting null in the content, so there default Tiptap content to use if content on campaign creation
 // is non-existent (and it probably will be)
@@ -25,6 +26,7 @@ const userRepository = AppDataSource.getRepository(User);
 
 const campaignService = {
   // CHANGE campaignDTO
+  // also heavily REVIEW all this logic since on front-end we're creating campaign by setting a title only and then updating all other fields
   createCampaign: async function (
     userId: string,
     campaignData: CreateCampaignDTO,
@@ -47,7 +49,7 @@ const campaignService = {
         id: savedCampaign.id,
         title: savedCampaign.title,
         imageUrl: savedCampaign.imageUrl,
-        masterName: user.username,
+        masterUsername: user.username,
       },
       meta: {
         userRole: "master",
@@ -81,7 +83,7 @@ const campaignService = {
         id: updatedCampaign.id,
         title: updatedCampaign.title,
         imageUrl: updatedCampaign.imageUrl,
-        masterName: updatedCampaign.master.username,
+        masterUsername: updatedCampaign.master.username,
       },
       meta: {
         userRole: "master",
@@ -94,8 +96,20 @@ const campaignService = {
     const campaign = await campaignRepository.findOneBy({ id: campaignId });
     if (!campaign)
       throw new NotFoundError("Campaign with this id is not found");
+
+    const imageToDelete = campaign.imageUrl;
     // will delete quests categories etc because of onDelete: cascade in entity relations
-    await campaignRepository.remove(campaign);
+    await campaignRepository.delete(campaignId);
+
+    // won't execute if campaign deletion didn't work
+    if (imageToDelete) {
+      CloudinaryStorageService.deleteImage(imageToDelete).catch((err) => {
+        console.log(
+          `ERROR while deleting cover image for campaign ${campaignId}: `,
+          err,
+        );
+      });
+    }
   },
 
   getUserPlayerCampaigns: async function (userId: string) {
@@ -116,7 +130,7 @@ const campaignService = {
         id: campaign.id,
         title: campaign.title,
         imageUrl: campaign.imageUrl,
-        masterName: campaign.master.username,
+        masterUsername: campaign.master.username,
       },
       meta: {
         userRole: "player",
@@ -142,7 +156,7 @@ const campaignService = {
         id: campaign.id,
         title: campaign.title,
         imageUrl: campaign.imageUrl,
-        masterName: campaign.master.username,
+        masterUsername: campaign.master.username,
       },
       meta: {
         userRole: "master",
@@ -168,7 +182,7 @@ const campaignService = {
         id: campaign.id,
         title: campaign.title,
         imageUrl: campaign.imageUrl,
-        masterName: campaign.master.username,
+        masterUsername: campaign.master.username,
       },
       meta: {
         userRole: campaign.master.id === userId ? "master" : "player",
@@ -223,7 +237,7 @@ const campaignService = {
         id: campaign.id,
         title: campaign.title,
         imageUrl: campaign.imageUrl,
-        masterName: campaign.master.username,
+        masterUsername: campaign.master.username,
       },
       meta: {
         userRole: role,
