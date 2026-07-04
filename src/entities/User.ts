@@ -8,6 +8,7 @@ import {
 } from "typeorm";
 import { Campaign } from "./Campaign.js";
 import { Token } from "./Token.js";
+import { CampaignMember } from "./CampaignMember.js";
 
 @Entity()
 export class User {
@@ -20,13 +21,16 @@ export class User {
   @Column({ unique: true, type: "varchar" })
   username!: string;
 
+  @Column({ type: "varchar", nullable: true })
+  avatarUrl?: string | null;
+
   @Column({ type: "varchar" })
   passwordHash!: string;
 
   @Column({ default: false, type: "bool" })
   isActivated!: boolean;
 
-  @Column({ type: "varchar" })
+  @Column({ type: "varchar", nullable: true })
   activationLink!: string;
 
   @OneToMany(() => Campaign, (campaign) => campaign.master, {
@@ -34,8 +38,10 @@ export class User {
   })
   masterCampaigns!: Campaign[];
 
-  @ManyToMany(() => Campaign, (campaign) => campaign.players)
-  playerCampaigns!: Campaign[];
+  @OneToMany(() => CampaignMember, (member) => member.user, {
+    cascade: true,
+  })
+  playerCampaigns!: CampaignMember[];
 
   @OneToOne(() => Token, (token) => token.user)
   token!: Token;

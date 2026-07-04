@@ -39,7 +39,6 @@ const campaignService = {
       imageUrl: campaignData.imageUrl || null,
       content: campaignData.content || DEFAULT_TIPTAP_CONTENT,
       master: user,
-      players: [],
     });
 
     const savedCampaign = await campaignRepository.save(newCampaign);
@@ -114,7 +113,7 @@ const campaignService = {
 
   getUserPlayerCampaigns: async function (userId: string) {
     const campaigns = await campaignRepository.find({
-      where: { players: { id: userId } },
+      where: { members: { userId } },
       relations: { master: true },
       select: {
         id: true,
@@ -166,7 +165,7 @@ const campaignService = {
 
   getUserAllCampaigns: async function (userId: string) {
     const campaigns = await campaignRepository.find({
-      where: [{ master: { id: userId } }, { players: { id: userId } }],
+      where: [{ master: { id: userId } }, { members: { userId } }],
       relations: { master: true },
       select: {
         id: true,
@@ -195,7 +194,7 @@ const campaignService = {
     const campaign = await campaignRepository.findOne({
       where: [
         { id: campaignId, master: { id: userId } },
-        { id: campaignId, players: { id: userId } },
+        { id: campaignId, members: { userId } },
       ],
       select: {
         id: true,

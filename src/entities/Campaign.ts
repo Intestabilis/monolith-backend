@@ -1,16 +1,19 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
-  ForeignKey,
   JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { QuestCategory } from "./QuestCategory.js";
 import { Quest } from "./Quest.js";
 import { User } from "./User.js";
+import { CampaignMember } from "./CampaignMember.js";
+import { CampaignInvite } from "./CampaignInvite.js";
 
 @Entity()
 export class Campaign {
@@ -33,9 +36,15 @@ export class Campaign {
   @ManyToOne(() => User, (user) => user.masterCampaigns)
   master!: User;
 
-  @ManyToMany(() => User)
-  @JoinTable()
-  players!: User[];
+  @OneToMany(() => CampaignMember, (member) => member.campaign, {
+    cascade: true,
+  })
+  members!: CampaignMember[];
+
+  @OneToMany(() => CampaignInvite, (invite) => invite.campaign, {
+    onDelete: "CASCADE",
+  })
+  invites!: CampaignInvite[];
 
   @OneToMany(() => QuestCategory, (category) => category.campaign, {
     onDelete: "CASCADE",
@@ -47,6 +56,9 @@ export class Campaign {
   })
   quests!: Quest[];
 
-  // createdAt:
-  // updatedAt:
+  @CreateDateColumn({ type: "timestamp with time zone" })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: "timestamp with time zone" })
+  updatedAt!: Date;
 }

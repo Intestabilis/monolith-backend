@@ -5,6 +5,7 @@ export const CreateUserSchema = z.object({
   username: z.string().min(6).max(20),
   password: z.string().min(3).max(20),
   isActivated: z.boolean().default(false),
+  avatarUrl: z.url().nullable().optional(),
 });
 
 export type CreateUserDTO = z.infer<typeof CreateUserSchema>;
@@ -36,3 +37,13 @@ export const UserCampaignInfoSchema = CreateUserSchema.omit({
 }).extend({ id: z.string() });
 
 export type UserCampaignInfoDTO = z.infer<typeof UserCampaignInfoSchema>;
+
+export const CampaignMemberSchema = UserCampaignInfoSchema.omit({
+  email: true,
+}).extend({
+  // joinedAt: z.iso.datetime(),
+  // characterName: z.string().optional(),
+  // characterClass: z.string().optional(),
+});
+
+export type CampaignMember = z.infer<typeof CampaignMemberSchema>;

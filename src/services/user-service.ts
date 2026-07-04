@@ -116,6 +116,7 @@ const userService = {
       username: user.username,
       email: user.email,
       isActivated: user.isActivated,
+      avatarUrl: user.avatarUrl,
     };
     return userDto;
   },

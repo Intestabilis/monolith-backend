@@ -4,6 +4,8 @@ import { QuestCategory } from "./entities/QuestCategory.js";
 import { Quest } from "./entities/Quest.js";
 import { User } from "./entities/User.js";
 import { Token } from "./entities/Token.js";
+import { CampaignMember } from "./entities/CampaignMember.js";
+import { CampaignInvite } from "./entities/CampaignInvite.js";
 
 export const AppDataSource = new DataSource({
   // REVIEW type manipulations + delete hardcoded options before prod
@@ -16,6 +18,14 @@ export const AppDataSource = new DataSource({
   synchronize: true,
   // logging: true,
   logging: false,
-  entities: [User, Token, Campaign, QuestCategory, Quest],
+  entities: [
+    User,
+    Token,
+    Campaign,
+    QuestCategory,
+    Quest,
+    CampaignMember,
+    CampaignInvite,
+  ],
   migrations: [],
 });

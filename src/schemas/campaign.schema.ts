@@ -1,4 +1,5 @@
 import z from "zod";
+import { CampaignMemberSchema } from "./user.schema.js";
 
 const TiptapContentSchema = z.object({
   type: z.literal("doc"),
@@ -14,6 +15,8 @@ export const CampaignPreviewSchema = z.object({
   title: z.string(),
   masterUsername: z.string(),
   imageUrl: z.string().nullable().optional(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
 });
 export type CampaignPreview = z.infer<typeof CampaignPreviewSchema>;
 
@@ -38,7 +41,9 @@ export const CampaignListResponseSchema = z.array(
 export type CampaignListResponse = z.infer<typeof CampaignListResponseSchema>;
 
 export const CampaignContextResponseSchema = z.object({
-  data: CampaignPreviewSchema,
+  data: CampaignPreviewSchema.extend({
+    members: z.array(CampaignMemberSchema).default([]),
+  }),
   meta: CampaignContextMetaSchema,
 });
 export type CampaignContextResponse = z.infer<
