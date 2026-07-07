@@ -41,7 +41,7 @@ export type UserCampaignInfoDTO = z.infer<typeof UserCampaignInfoSchema>;
 export const CampaignMemberSchema = UserCampaignInfoSchema.omit({
   email: true,
 }).extend({
-  // joinedAt: z.iso.datetime(),
+  joinedAt: z.iso.datetime(),
   // characterName: z.string().optional(),
   // characterClass: z.string().optional(),
 });

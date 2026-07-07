@@ -1,5 +1,6 @@
 import { AppDataSource } from "../data-source.js";
 import { Campaign } from "../entities/Campaign.js";
+import { CampaignMember } from "../entities/CampaignMember.js";
 import { User } from "../entities/User.js";
 import NotFoundError from "../exceptions/not-found.js";
 import UnauthorizedError from "../exceptions/unauthorized.js";
@@ -23,6 +24,7 @@ const DEFAULT_TIPTAP_CONTENT = {
 
 const campaignRepository = AppDataSource.getRepository(Campaign);
 const userRepository = AppDataSource.getRepository(User);
+const memberRepository = AppDataSource.getRepository(CampaignMember);
 
 const campaignService = {
   // CHANGE campaignDTO
@@ -49,6 +51,8 @@ const campaignService = {
         title: savedCampaign.title,
         imageUrl: savedCampaign.imageUrl,
         masterUsername: user.username,
+        createdAt: savedCampaign.createdAt.toISOString(),
+        updatedAt: savedCampaign.updatedAt.toISOString(),
       },
       meta: {
         userRole: "master",
@@ -83,6 +87,8 @@ const campaignService = {
         title: updatedCampaign.title,
         imageUrl: updatedCampaign.imageUrl,
         masterUsername: updatedCampaign.master.username,
+        createdAt: updatedCampaign.createdAt.toISOString(),
+        updatedAt: updatedCampaign.updatedAt.toISOString(),
       },
       meta: {
         userRole: "master",
@@ -120,8 +126,10 @@ const campaignService = {
         title: true,
         imageUrl: true,
         master: { id: true, username: true },
+        createdAt: true,
+        updatedAt: true,
       },
-      order: { id: "DESC" },
+      order: { updatedAt: "DESC" },
     });
 
     return campaigns.map((campaign) => ({
@@ -130,6 +138,8 @@ const campaignService = {
         title: campaign.title,
         imageUrl: campaign.imageUrl,
         masterUsername: campaign.master.username,
+        createdAt: campaign.createdAt.toISOString(),
+        updatedAt: campaign.updatedAt.toISOString(),
       },
       meta: {
         userRole: "player",
@@ -146,8 +156,10 @@ const campaignService = {
         title: true,
         imageUrl: true,
         master: { id: true, username: true },
+        createdAt: true,
+        updatedAt: true,
       },
-      order: { id: "DESC" },
+      order: { updatedAt: "DESC" },
     });
 
     return campaigns.map((campaign) => ({
@@ -156,6 +168,8 @@ const campaignService = {
         title: campaign.title,
         imageUrl: campaign.imageUrl,
         masterUsername: campaign.master.username,
+        createdAt: campaign.createdAt.toISOString(),
+        updatedAt: campaign.updatedAt.toISOString(),
       },
       meta: {
         userRole: "master",
@@ -172,8 +186,10 @@ const campaignService = {
         title: true,
         imageUrl: true,
         master: { id: true, username: true },
+        createdAt: true,
+        updatedAt: true,
       },
-      order: { id: "DESC" },
+      order: { updatedAt: "DESC" },
     });
 
     return campaigns.map((campaign) => ({
@@ -182,6 +198,8 @@ const campaignService = {
         title: campaign.title,
         imageUrl: campaign.imageUrl,
         masterUsername: campaign.master.username,
+        createdAt: campaign.createdAt.toISOString(),
+        updatedAt: campaign.updatedAt.toISOString(),
       },
       meta: {
         userRole: campaign.master.id === userId ? "master" : "player",
@@ -191,52 +209,60 @@ const campaignService = {
 
   // REVIEW if anytime will think about implementing other roles (co-DM etc, then should modify join table and work with it instead)
   getUserRole: async function (userId: string, campaignId: string) {
-    const campaign = await campaignRepository.findOne({
-      where: [
-        { id: campaignId, master: { id: userId } },
-        { id: campaignId, members: { userId } },
-      ],
-      select: {
-        id: true,
-        master: {
-          id: true, // to check if master
-        },
-      },
-      relations: {
-        master: true,
-      },
+    const isMaster = await campaignRepository.exists({
+      where: { id: campaignId, master: { id: userId } },
     });
 
-    if (!campaign) {
-      throw new UnauthorizedError(
-        "You are not authorized to interact with this campaign",
-      );
-    }
+    if (isMaster) return "master";
 
-    return campaign.master.id === userId ? "master" : "player";
+    const isPlayer = await memberRepository.exists({
+      where: { campaignId, userId },
+    });
+
+    if (isPlayer) return "player";
+
+    throw new UnauthorizedError(
+      "You are not authorized to interact with this campaign",
+    );
   },
 
   getCampaignContext: async function (campaignId: string, role: CampaignRole) {
     const campaign = await campaignRepository.findOne({
       where: { id: campaignId },
-      relations: { master: true },
+      relations: { master: true, members: { user: true } },
       select: {
         id: true,
         title: true,
         imageUrl: true,
-        master: { id: true, username: true },
+        master: { id: true, username: true, avatarUrl: true },
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
     if (!campaign)
       throw new NotFoundError("Campaign with this id is not found");
 
+    const members = (campaign.members || []).map((member) => ({
+      id: member.user.id,
+      username: member.user.username,
+      avatarUrl: member.user.avatarUrl || null,
+      joinedAt: member.joinedAt.toISOString(),
+    }));
+
     return {
       data: {
         id: campaign.id,
         title: campaign.title,
         imageUrl: campaign.imageUrl,
-        masterUsername: campaign.master.username,
+        master: {
+          id: campaign.master.id,
+          username: campaign.master.username,
+          avatarUrl: campaign.master.avatarUrl,
+        },
+        createdAt: campaign.createdAt.toISOString(),
+        updatedAt: campaign.updatedAt.toISOString(),
+        members: members,
       },
       meta: {
         userRole: role,

@@ -43,6 +43,7 @@ export type CampaignListResponse = z.infer<typeof CampaignListResponseSchema>;
 export const CampaignContextResponseSchema = z.object({
   data: CampaignPreviewSchema.extend({
     members: z.array(CampaignMemberSchema).default([]),
+    master: CampaignMemberSchema.omit({ joinedAt: true }),
   }),
   meta: CampaignContextMetaSchema,
 });

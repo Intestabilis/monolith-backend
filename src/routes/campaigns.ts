@@ -19,6 +19,8 @@ import {
   UpdateCampaignSchema,
 } from "../schemas/campaign.schema.js";
 import { uploadCampaignCover } from "../middlewares/upload-middleware.js";
+import partyRouter from "./party.js";
+import { joinCampaign } from "../controllers/party-controller.js";
 
 const router = Router();
 
@@ -61,5 +63,16 @@ router.patch(
 );
 
 router.delete("/:id", requireCampaignRole(["master"]), deleteCampaign);
+
+// PARTY ROUTER (and functionality)
+
+router.post(
+  "/join/:token",
+  authMiddleware,
+  validate({ params: { token: z.uuid() } }),
+  joinCampaign,
+);
+
+router.use("/:id/party", partyRouter);
 
 export default router;
