@@ -97,23 +97,48 @@ const campaignService = {
     };
   },
 
+  updateCampaignContent: async function (
+    campaignId: string,
+    campaignData: UpdateCampaignDTO,
+  ) {
+    const campaign = await campaignRepository.findOne({
+      where: { id: campaignId },
+    });
+
+    if (!campaign)
+      throw new NotFoundError("Campaign with this id is not found");
+    if (campaignData.content !== undefined)
+      campaign.content = campaignData.content;
+
+    const updatedCampaign = await campaignRepository.save(campaign);
+
+    console.log(updatedCampaign.content);
+
+    return {
+      data: {
+        id: updatedCampaign.id,
+        content: updatedCampaign.content,
+      },
+    };
+  },
+
   deleteCampaign: async function (campaignId: string) {
     const campaign = await campaignRepository.findOneBy({ id: campaignId });
     if (!campaign)
       throw new NotFoundError("Campaign with this id is not found");
 
-    const imageToDelete = campaign.imageUrl;
-    // will delete quests categories etc because of onDelete: cascade in entity relations
     await campaignRepository.delete(campaignId);
 
+    const campaignTag = `campaign_${campaignId}`;
+    const campaignFolderPath = `campaigns/${campaignId}`;
+    // REVIEW test if folder deletion really works
     // won't execute if campaign deletion didn't work
-    if (imageToDelete) {
-      CloudinaryStorageService.deleteImage(imageToDelete).catch((err) => {
-        console.log(
-          `ERROR while deleting cover image for campaign ${campaignId}: `,
-          err,
-        );
-      });
+    // will delete quests categories etc because of onDelete: cascade in entity relations
+    try {
+      await CloudinaryStorageService.deleteByTag(campaignTag);
+      await CloudinaryStorageService.deleteFolder(campaignFolderPath);
+    } catch (error) {
+      console.error("Error while deleting campaign resources: ", error);
     }
   },
 

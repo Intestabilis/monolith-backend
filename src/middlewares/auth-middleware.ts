@@ -6,7 +6,6 @@ import tokenService from "../services/token-service.js";
 export default function (req: Request, res: Response, next: NextFunction) {
   try {
     const authorizationHeader = req.headers.authorization;
-    console.log(authorizationHeader);
     if (!authorizationHeader) return next(new UnauthenticatedError());
     // header syntax: Bearer {token}
 

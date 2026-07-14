@@ -1,10 +1,10 @@
 import z from "zod";
 import { CampaignMemberSchema } from "./user.schema.js";
 
-const TiptapContentSchema = z.object({
+const TiptapContentSchema = z.looseObject({
   type: z.literal("doc"),
   // simple validation, can impove with definite union schema for every possible content but IMHO too much work it'll suffice
-  content: z.array(z.object()).optional(),
+  content: z.array(z.any()).optional(),
 });
 
 export const CampaignRoleSchema = z.enum(["master", "player"]);
@@ -63,10 +63,18 @@ export type CampaignContentResponse = z.infer<
 
 export const CreateCampaignSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title is too long"),
-  imageUrl: z.string().url("Invalid image URL").nullable().optional(),
+  imageUrl: z.url("Invalid image URL").nullable().optional(),
   content: TiptapContentSchema.nullable().optional(),
 });
 export type CreateCampaignDTO = z.infer<typeof CreateCampaignSchema>;
 
 export const UpdateCampaignSchema = CreateCampaignSchema.partial();
 export type UpdateCampaignDTO = z.infer<typeof UpdateCampaignSchema>;
+
+export const UpdateCampaignContentSchema = UpdateCampaignSchema.pick({
+  content: true,
+});
+
+export type UpdateCampaignContentDTO = z.infer<
+  typeof UpdateCampaignContentSchema
+>;

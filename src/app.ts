@@ -7,6 +7,7 @@ import cors from "cors";
 import authRouter from "./routes/auth.js";
 import userRouter from "./routes/users.js";
 import campaignRouter from "./routes/campaigns.js";
+import fileRouter from "./routes/files.js";
 import errorMiddleware from "./middlewares/error-middleware.js";
 
 try {
@@ -34,7 +35,7 @@ app.use(
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/campaigns", campaignRouter);
-
+app.use("/upload", fileRouter);
 app.use(errorMiddleware);
 
 app.listen(port, () => {

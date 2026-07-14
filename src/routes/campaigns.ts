@@ -12,10 +12,12 @@ import {
   getUserMasterCampaigns,
   getUserPlayerCampaigns,
   updateCampaign,
+  updateCampaignContent,
   uploadCover,
 } from "../controllers/campaign-controller.js";
 import {
   CreateCampaignSchema,
+  UpdateCampaignContentSchema,
   UpdateCampaignSchema,
 } from "../schemas/campaign.schema.js";
 import { uploadCampaignCover } from "../middlewares/upload-middleware.js";
@@ -34,22 +36,21 @@ router.post("/", validate({ body: CreateCampaignSchema }), createCampaign);
 
 router.get(
   "/:id/context",
-  validate({ params: { id: z.uuid() } }),
   requireCampaignRole(["master", "player"]),
+  validate({ params: { id: z.uuid() } }),
   getCampaignContext,
 );
 
 router.get(
   "/:id/content",
-  validate({ params: { id: z.uuid() } }),
   requireCampaignRole(["master", "player"]),
+  validate({ params: { id: z.uuid() } }),
   getCampaignContent,
 );
 
 // CHANGE add files validation with zod
 router.post(
   "/:id/cover",
-  authMiddleware,
   requireCampaignRole(["master"]),
   uploadCampaignCover.single("image"),
   uploadCover,
@@ -62,13 +63,19 @@ router.patch(
   updateCampaign,
 );
 
+router.patch(
+  "/:id/content",
+  requireCampaignRole(["master"]),
+  validate({ params: { id: z.uuid() }, body: UpdateCampaignContentSchema }),
+  updateCampaignContent,
+);
+
 router.delete("/:id", requireCampaignRole(["master"]), deleteCampaign);
 
 // PARTY ROUTER (and functionality)
 
 router.post(
   "/join/:token",
-  authMiddleware,
   validate({ params: { token: z.uuid() } }),
   joinCampaign,
 );

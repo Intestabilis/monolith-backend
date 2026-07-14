@@ -66,7 +66,6 @@ export async function updateCampaign(
   try {
     const { id } = req.params;
     const campaignData = req.body;
-    console.log(id);
     // REVIEW once again type assertion
     const campaign = await campaignService.updateCampaign(
       id as string,
@@ -77,6 +76,28 @@ export async function updateCampaign(
     next(err);
   }
 }
+
+export async function updateCampaignContent(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const { id } = req.params;
+    const campaignData = req.body;
+    console.log("TESTTESTTEST");
+    console.log("BODYYY ", campaignData);
+    // REVIEW once again type assertion
+    const campaign = await campaignService.updateCampaignContent(
+      id as string,
+      campaignData,
+    );
+    res.json(campaign);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function deleteCampaign(
   req: Request,
   res: Response,
@@ -140,7 +161,12 @@ export async function uploadCover(
       file.buffer,
       file.originalname,
       file.mimetype,
-      { folder: "campaigns", entityId: id as string },
+      // REVIEW fileId change
+      {
+        folderPath: `campaigns/${id}`,
+        fileId: "cover",
+        tags: [`campaign_${id}`],
+      },
     );
 
     // REVIEW lowkey stinks (and maybe should divide update method in different methods like updateTitle, updateContent etc at all), but will do for now
