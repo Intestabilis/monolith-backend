@@ -4,7 +4,7 @@ import { requireCampaignRole } from "../middlewares/campaign-role-middleware.js"
 import { uploadEditorImage } from "../middlewares/upload-middleware.js";
 import validate from "express-zod-safe";
 import z from "zod";
-import { uploadCampaignEditorImage } from "../controllers/file-controller.js";
+import fileController from "../controllers/file-controller.js";
 
 const router = Router();
 
@@ -17,7 +17,7 @@ router.post(
   requireCampaignRole(["master"], "campaignId"),
   validate({ params: { campaignId: z.uuid() } }),
   uploadEditorImage.single("image"),
-  uploadCampaignEditorImage,
+  fileController.uploadCampaignEditorImage,
 );
 
 export default router;

@@ -3,30 +3,31 @@ import { CreateUserSchema, LoginUserSchema } from "../schemas/user.schema.js";
 import validate from "express-zod-safe";
 import z from "zod";
 
-import {
-  register,
-  login,
-  logout,
-  activate,
-  refresh,
-  getStatus,
-} from "../controllers/auth-controller.js";
+import authController from "../controllers/auth-controller.js";
 import authMiddleware from "../middlewares/auth-middleware.js";
 
 const router = Router();
 
-router.post("/register", validate({ body: CreateUserSchema }), register);
+router.post(
+  "/register",
+  validate({ body: CreateUserSchema }),
+  authController.register,
+);
 
-router.post("/login", validate({ body: LoginUserSchema }), login);
+router.post(
+  "/login",
+  validate({ body: LoginUserSchema }),
+  authController.login,
+);
 // maybe create some custom validation for cookies later since token in it
-router.post("/logout", logout);
+router.post("/logout", authController.logout);
 router.post(
   "/activate/:link",
   validate({ params: { link: z.string() } }),
-  activate,
+  authController.activate,
 );
-router.get("/refresh", refresh);
+router.get("/refresh", authController.refresh);
 
-router.get("/status", authMiddleware, getStatus);
+router.get("/status", authMiddleware, authController.getStatus);
 
 export default router;

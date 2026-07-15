@@ -3,12 +3,7 @@ import authMiddleware from "../middlewares/auth-middleware.js";
 import { requireCampaignRole } from "../middlewares/campaign-role-middleware.js";
 import validate from "express-zod-safe";
 import z from "zod";
-import {
-  createCampaignInvite,
-  getCampaignParty,
-  joinCampaign,
-  removeCampaignMember,
-} from "../controllers/party-controller.js";
+import partyController from "../controllers/party-controller.js";
 
 // CHANGE move it somewhere, can't decide where (doesn't feel right to create type file for just this schema)
 const CreateInviteSchema = z.object({
@@ -22,7 +17,7 @@ router.get(
   authMiddleware,
   requireCampaignRole(["master", "player"]),
   validate({ params: { id: z.uuid() } }),
-  getCampaignParty,
+  partyController.getCampaignParty,
 );
 
 router.post(
@@ -30,7 +25,7 @@ router.post(
   authMiddleware,
   requireCampaignRole(["master"]),
   validate({ params: { id: z.uuid() }, body: CreateInviteSchema }),
-  createCampaignInvite,
+  partyController.createCampaignInvite,
 );
 
 router.delete(
@@ -40,7 +35,7 @@ router.delete(
   validate({
     params: { id: z.uuid(), userId: z.uuid() },
   }),
-  removeCampaignMember,
+  partyController.removeCampaignMember,
 );
 
 export default router;
