@@ -1,9 +1,11 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { Quest } from "./Quest.js";
 import { Campaign } from "./Campaign.js";
@@ -22,9 +24,15 @@ export class QuestCategory {
   @Column({ default: 0, type: "numeric" })
   order!: number;
 
-  @OneToMany(() => Quest, (quest) => quest.category)
+  @CreateDateColumn({ type: "timestamp with time zone" })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ type: "timestamp with time zone" })
+  updatedAt!: Date;
+
+  @OneToMany(() => Quest, (quest) => quest.category, { onDelete: "CASCADE" })
   quests!: Quest[];
 
   @ManyToOne(() => Campaign, (campaign) => campaign.questCategories)
-  campaign!: Campaign[];
+  campaign!: Campaign;
 }

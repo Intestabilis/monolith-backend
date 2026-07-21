@@ -11,6 +11,7 @@ import {
 } from "../schemas/campaign.schema.js";
 import { uploadCampaignCover } from "../middlewares/upload-middleware.js";
 import partyRouter from "./party.js";
+import questRouter from "./quests.js";
 import partyController from "../controllers/party-controller.js";
 
 const router = Router();
@@ -78,5 +79,9 @@ router.post(
 );
 
 router.use("/:id/party", partyRouter);
+
+// QUESTS ROUTER
+
+router.use("/:campaignId/quests", questRouter);
 
 export default router;
