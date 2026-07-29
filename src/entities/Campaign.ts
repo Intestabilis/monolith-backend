@@ -14,6 +14,7 @@ import { Quest } from "./Quest.js";
 import { User } from "./User.js";
 import { CampaignMember } from "./CampaignMember.js";
 import { CampaignInvite } from "./CampaignInvite.js";
+import { Widget } from "./Widget.js";
 
 @Entity()
 export class Campaign {
@@ -55,6 +56,11 @@ export class Campaign {
     onDelete: "CASCADE",
   })
   quests!: Quest[];
+
+  @OneToMany(() => Widget, (widget) => widget.campaign, {
+    onDelete: "CASCADE",
+  })
+  widgets!: Widget[];
 
   @CreateDateColumn({ type: "timestamp with time zone" })
   createdAt!: Date;

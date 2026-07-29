@@ -13,6 +13,7 @@ import { uploadCampaignCover } from "../middlewares/upload-middleware.js";
 import partyRouter from "./party.js";
 import questRouter from "./quests.js";
 import partyController from "../controllers/party-controller.js";
+import widgetRouter from "./widgets.js";
 
 const router = Router();
 
@@ -83,5 +84,9 @@ router.use("/:id/party", partyRouter);
 // QUESTS ROUTER
 
 router.use("/:campaignId/quests", questRouter);
+
+// DMSCREEN WIDGETS ROUTER
+
+router.use("/:campaignId/widgets", widgetRouter);
 
 export default router;
