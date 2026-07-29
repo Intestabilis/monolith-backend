@@ -11,6 +11,12 @@ import type {
 } from "../schemas/campaign.schema.js";
 import CloudinaryStorageService from "./storage-service.js";
 
+// HEAVILY REVIEW/TODO: some of functions uses old data shape with masterUsername instead of master and player objects
+// it's not necessary bad since in this places we probably doesn't need party info and master info (more than username), BUT still data inconsistency
+// should either somehow separate and type it as 2 different return shapes or think how to rewrite this properly in other way
+// especially since create/update logic had changed and we doesn't need full info on creating/updating
+// also review and CHANGE schemas/dto later
+
 // REVIEW - Google said that Tiptap might crash with getting null in the content, so there default Tiptap content to use if content on campaign creation
 // is non-existent (and it probably will be)
 const DEFAULT_TIPTAP_CONTENT = {
@@ -67,7 +73,7 @@ const campaignService = {
   ) {
     const campaign = await campaignRepository.findOne({
       where: { id: campaignId },
-      relations: { master: true },
+      relations: { master: true, members: { user: true } },
     });
 
     if (!campaign)
@@ -81,18 +87,35 @@ const campaignService = {
 
     const updatedCampaign = await campaignRepository.save(campaign);
 
+    const members = (updatedCampaign.members || []).map((member) => ({
+      id: member.user.id,
+      username: member.user.username,
+      avatarUrl: member.user.avatarUrl || null,
+      joinedAt: member.joinedAt.toISOString(),
+    }));
+
+    console.log(members);
+
     return {
       data: {
-        id: updatedCampaign.id,
-        title: updatedCampaign.title,
-        imageUrl: updatedCampaign.imageUrl,
-        masterUsername: updatedCampaign.master.username,
-        createdAt: updatedCampaign.createdAt.toISOString(),
-        updatedAt: updatedCampaign.updatedAt.toISOString(),
+        id: campaign.id,
+        title: campaign.title,
+        imageUrl: campaign.imageUrl,
+        master: {
+          id: campaign.master.id,
+          username: campaign.master.username,
+          avatarUrl: campaign.master.avatarUrl,
+        },
+        createdAt: campaign.createdAt.toISOString(),
+        updatedAt: campaign.updatedAt.toISOString(),
+        members: members,
       },
       meta: {
         userRole: "master",
-        permissions: { canEditLore: true, canInvitePlayers: true },
+        permissions: {
+          canEditLore: true,
+          canInvitePlayers: true,
+        },
       },
     };
   },

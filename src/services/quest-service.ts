@@ -191,7 +191,10 @@ const questService = {
     return { success: true };
   },
 
-  reorderItems: async (campaignId: string, questData: ReorderItemsDTO) => {
+  reorderItems: async function (
+    campaignId: string,
+    questData: ReorderItemsDTO,
+  ) {
     // using transaction to update data securily and do a fallback if one quest/category can't update for some reason
     await AppDataSource.transaction(async (transactionalEntityManager) => {
       for (const item of questData.items) {
