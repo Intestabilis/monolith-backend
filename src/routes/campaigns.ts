@@ -14,6 +14,7 @@ import partyRouter from "./party.js";
 import questRouter from "./quests.js";
 import partyController from "../controllers/party-controller.js";
 import widgetRouter from "./widgets.js";
+import activationMiddleware from "../middlewares/activation-middleware.js";
 
 const router = Router();
 
@@ -22,6 +23,8 @@ router.use(authMiddleware);
 router.get("/my-campaigns", campaignController.getUserCampaigns);
 router.get("/my-campaigns/player", campaignController.getUserPlayerCampaigns);
 router.get("/my-campaigns/master", campaignController.getUserMasterCampaigns);
+
+router.use(activationMiddleware);
 
 router.post(
   "/",

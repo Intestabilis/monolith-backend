@@ -8,6 +8,7 @@ import type { UserTokenDTO } from "../schemas/user.schema.js";
 import UnauthenticatedError from "../exceptions/unauthenticated.js";
 import BadRequestError from "../exceptions/bad-request.js";
 import NotFoundError from "../exceptions/not-found.js";
+import emailService from "./email-service.js";
 
 const userRepository = AppDataSource.getRepository(User);
 
@@ -25,7 +26,7 @@ const userService = {
         "User with this email or username is already exist",
       );
     // CHANGE salt
-    const passwordHash = await bcrypt.hash(password, 2);
+    const passwordHash = await bcrypt.hash(password, 4);
     const activationLink = uuidv4();
 
     const user = await userRepository.save({
@@ -35,7 +36,14 @@ const userService = {
       activationLink,
     });
 
-    // TODO SEND ACTIVATION LINK EMAIL ETC WITH EMAIL SERVICE
+    // Sending email with activation link
+    // catch to still sign up user even if something wrong with email service and email wasn't sent
+    emailService
+      .sendActivationLink(user.email, user.activationLink)
+      .catch((error) => {
+        console.error(`Failed to send activation to ${user.email}:`, error);
+        // REVIEW maybe add retry/logging/etc
+      });
 
     const tokens = tokenService.generateTokens({
       id: user.id,
@@ -70,11 +78,25 @@ const userService = {
     return token;
   },
 
+  // REVIEW maybe do some additional user check
+
   activateUser: async function (activationLink: string) {
     const user = await userRepository.findOneBy({ activationLink });
     if (!user) throw new NotFoundError("No user with this activation link");
     user.isActivated = true;
     await userRepository.update(user.id, { isActivated: user.isActivated });
+
+    const userDto = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      isActivated: user.isActivated,
+    };
+
+    const tokens = tokenService.generateTokens(userDto);
+    await tokenService.saveToken(userDto.id, tokens.refreshToken);
+
+    return { ...tokens, user: userDto };
   },
 
   refreshUserToken: async function (refreshToken: string) {

@@ -13,10 +13,12 @@ import {
   reorderItemsSchema,
 } from "../schemas/quest.schema.js";
 import authMiddleware from "../middlewares/auth-middleware.js";
+import activationMiddleware from "../middlewares/activation-middleware.js";
 
 const router = Router({ mergeParams: true });
 
 router.use(authMiddleware);
+router.use(activationMiddleware);
 
 // validation schemas
 const campaignParamSchema = z.object({

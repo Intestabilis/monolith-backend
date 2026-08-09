@@ -9,6 +9,7 @@ import {
   updateWidgetContentSchema,
   updateWidgetsLayoutSchema,
 } from "../schemas/widget.schema.js";
+import activationMiddleware from "../middlewares/activation-middleware.js";
 
 const router = Router({ mergeParams: true });
 
@@ -16,6 +17,7 @@ const router = Router({ mergeParams: true });
 // but if I would add some public routes I can change it)
 
 router.use(authMiddleware);
+router.use(activationMiddleware);
 router.use(requireCampaignRole(["master"], "campaignId"));
 
 // validation schemas

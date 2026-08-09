@@ -4,6 +4,7 @@ import type { NextFunction, Request, Response } from "express";
 
 import userService from "../services/user-service.js";
 import UnauthenticatedError from "../exceptions/unauthenticated.js";
+import tokenService from "../services/token-service.js";
 
 const authController = {
   register: async function (req: Request, res: Response, next: NextFunction) {
@@ -49,8 +50,38 @@ const authController = {
   activate: async function (req: Request, res: Response, next: NextFunction) {
     try {
       const activationLink = req.params.link as string;
-      await userService.activateUser(activationLink);
-      return res.redirect(process.env.CLIENT_URL!);
+      const userData = await userService.activateUser(activationLink);
+
+      const authHeader = req.headers.authorization;
+      let currentUserId = null;
+
+      if (authHeader) {
+        const accessToken = authHeader.split(" ")[1];
+        try {
+          const tokenUserData = tokenService.validateAccessToken(accessToken!);
+          if (tokenUserData) currentUserId = tokenUserData.id;
+        } catch (e) {
+          // ignoring validation errors
+        }
+      }
+
+      const { user, accessToken, refreshToken } = userData;
+
+      if (currentUserId === user.id) {
+        res.cookie("refreshToken", refreshToken, {
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+          httpOnly: true,
+        });
+
+        return res.json({
+          message: "Акаунт успішно активовано",
+          accessToken: accessToken,
+        });
+      }
+
+      return res.json({
+        message: "Акаунт успішно активовано. Будь ласка, увійдіть у систему",
+      });
     } catch (err) {
       next(err);
     }
