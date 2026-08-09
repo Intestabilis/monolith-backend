@@ -7,6 +7,7 @@ import { Token } from "./entities/Token.js";
 import { CampaignMember } from "./entities/CampaignMember.js";
 import { CampaignInvite } from "./entities/CampaignInvite.js";
 import { Widget } from "./entities/Widget.js";
+import { UserSecrets } from "./entities/UserSecrets.js";
 
 export const AppDataSource = new DataSource({
   // REVIEW type manipulations + delete hardcoded options before prod
@@ -21,6 +22,7 @@ export const AppDataSource = new DataSource({
   logging: false,
   entities: [
     User,
+    UserSecrets,
     Token,
     Campaign,
     QuestCategory,

@@ -9,8 +9,10 @@ import UnauthenticatedError from "../exceptions/unauthenticated.js";
 import BadRequestError from "../exceptions/bad-request.js";
 import NotFoundError from "../exceptions/not-found.js";
 import emailService from "./email-service.js";
+import { UserSecrets } from "../entities/UserSecrets.js";
 
 const userRepository = AppDataSource.getRepository(User);
+const userSecretsRepository = AppDataSource.getRepository(UserSecrets);
 
 const userService = {
   createUser: async function (
@@ -27,24 +29,32 @@ const userService = {
       );
     // CHANGE salt
     const passwordHash = await bcrypt.hash(password, 4);
+
     const activationLink = uuidv4();
+    const activationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const secrets = userSecretsRepository.create({
+      activationLink,
+      activationExpires,
+    });
 
     const user = await userRepository.save({
       email,
       username,
       passwordHash,
-      activationLink,
+      secrets,
     });
 
     // Sending email with activation link
     // catch to still sign up user even if something wrong with email service and email wasn't sent
     emailService
-      .sendActivationLink(user.email, user.activationLink)
+      .sendActivationLink(user.email, activationLink)
       .catch((error) => {
         console.error(`Failed to send activation to ${user.email}:`, error);
         // REVIEW maybe add retry/logging/etc
       });
 
+    // REVIEW maybe we actually should move token generation logic in controller(s) from this service? Now I'm not sure about this service as a correct place for this
     const tokens = tokenService.generateTokens({
       id: user.id,
       username: user.username,
@@ -81,10 +91,32 @@ const userService = {
   // REVIEW maybe do some additional user check
 
   activateUser: async function (activationLink: string) {
-    const user = await userRepository.findOneBy({ activationLink });
+    const secrets = await userSecretsRepository.findOne({
+      where: { activationLink },
+      relations: { user: true },
+    });
+
+    if (!secrets) {
+      throw new NotFoundError("This activation link does not exist or damaged");
+    }
+
+    if (secrets.activationExpires && secrets.activationExpires < new Date()) {
+      throw new BadRequestError(
+        "This activation link is expired, please, get a new one",
+      );
+    }
+
+    const user = secrets.user;
     if (!user) throw new NotFoundError("No user with this activation link");
+
     user.isActivated = true;
+
+    // maybe should place this after updating user in repository
+    secrets.activationLink = null;
+    secrets.activationExpires = null;
+
     await userRepository.update(user.id, { isActivated: user.isActivated });
+    await userSecretsRepository.save(secrets);
 
     const userDto = {
       id: user.id,
@@ -97,6 +129,39 @@ const userService = {
     await tokenService.saveToken(userDto.id, tokens.refreshToken);
 
     return { ...tokens, user: userDto };
+  },
+
+  resendActivation: async function (userId: string) {
+    const user = await userRepository.findOne({
+      where: { id: userId },
+      relations: { secrets: true },
+    });
+
+    if (!user) throw new NotFoundError("User with this id does not exist");
+
+    if (user.isActivated)
+      throw new BadRequestError("Account is already activated");
+
+    const newActivationLink = uuidv4();
+    const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    let secrets = user.secrets;
+
+    // fallback if secrets do not exist for some reason
+    if (!secrets) {
+      secrets = userSecretsRepository.create({ user: { id: userId } });
+    }
+
+    secrets.activationLink = newActivationLink;
+    secrets.activationExpires = newExpires;
+
+    await userSecretsRepository.save(secrets);
+
+    emailService
+      .sendActivationLink(user.email, newActivationLink)
+      .catch((error) => {
+        console.error(`Failed to resend activation to ${user.email}:`, error);
+      });
   },
 
   refreshUserToken: async function (refreshToken: string) {

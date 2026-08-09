@@ -21,11 +21,19 @@ router.post(
 );
 // maybe create some custom validation for cookies later since token in it
 router.post("/logout", authController.logout);
+
 router.post(
   "/activate/:link",
   validate({ params: { link: z.string() } }),
   authController.activate,
 );
+
+router.post(
+  "/resend-activation",
+  authMiddleware,
+  authController.resendActivation,
+);
+
 router.get("/refresh", authController.refresh);
 
 router.get("/status", authMiddleware, authController.getStatus);

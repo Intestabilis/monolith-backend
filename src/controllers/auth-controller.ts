@@ -86,6 +86,23 @@ const authController = {
       next(err);
     }
   },
+
+  resendActivation: async function (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const userId = req.user!.id;
+
+      await userService.resendActivation(userId);
+
+      return res.json({ message: "Новий лист активації успішно відправлено" });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   refresh: async function (req: Request, res: Response, next: NextFunction) {
     try {
       const { refreshToken } = req.cookies;

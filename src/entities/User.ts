@@ -9,6 +9,7 @@ import {
 import { Campaign } from "./Campaign.js";
 import { Token } from "./Token.js";
 import { CampaignMember } from "./CampaignMember.js";
+import { UserSecrets } from "./UserSecrets.js";
 
 @Entity()
 export class User {
@@ -30,9 +31,6 @@ export class User {
   @Column({ default: false, type: "bool" })
   isActivated!: boolean;
 
-  @Column({ type: "varchar", nullable: true })
-  activationLink!: string;
-
   @OneToMany(() => Campaign, (campaign) => campaign.master, {
     onDelete: "CASCADE",
   })
@@ -45,4 +43,11 @@ export class User {
 
   @OneToOne(() => Token, (token) => token.user)
   token!: Token;
+
+  @OneToOne(() => UserSecrets, (secrets) => secrets.user, {
+    cascade: true,
+    nullable: true,
+    onDelete: "CASCADE",
+  })
+  secrets!: UserSecrets;
 }
