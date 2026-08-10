@@ -24,6 +24,12 @@ export class UserSecrets {
   @Column({ type: "timestamp", nullable: true })
   resetPasswordExpires!: Date | null;
 
+  @Column({ type: "timestamp", nullable: true })
+  lastActivationEmailSentAt!: Date | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  lastResetEmailSentAt!: Date | null;
+
   @OneToOne(() => User, (user) => user.secrets, { onDelete: "CASCADE" })
   @JoinColumn()
   user!: User;

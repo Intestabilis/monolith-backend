@@ -142,9 +142,6 @@ const userService = {
     if (user.isActivated)
       throw new BadRequestError("Account is already activated");
 
-    const newActivationLink = uuidv4();
-    const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
-
     let secrets = user.secrets;
 
     // fallback if secrets do not exist for some reason
@@ -152,8 +149,23 @@ const userService = {
       secrets = userSecretsRepository.create({ user: { id: userId } });
     }
 
+    if (secrets.lastActivationEmailSentAt) {
+      const timeSince =
+        Date.now() - secrets.lastActivationEmailSentAt.getTime();
+      if (timeSince < 15 * 60 * 1000) {
+        const waitMinutes = Math.ceil((15 * 60 * 1000 - timeSince) / 60000);
+        throw new BadRequestError(
+          `Нещодавно ви вже робили цей запит, зачекайте ще ${waitMinutes} хвилин перед наступною спробою.`,
+        );
+      }
+    }
+
+    const newActivationLink = uuidv4();
+    const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
+
     secrets.activationLink = newActivationLink;
     secrets.activationExpires = newExpires;
+    secrets.lastActivationEmailSentAt = new Date();
 
     await userSecretsRepository.save(secrets);
 
@@ -233,9 +245,6 @@ const userService = {
     if (!user) return;
     // if (!user) throw new NotFoundError("Користувач з таким email не існує");
 
-    const resetToken = uuidv4();
-    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
     let secrets = user.secrets;
 
     // REVIEW this fallback + fallback in resendActivation
@@ -244,8 +253,22 @@ const userService = {
       secrets = userSecretsRepository.create({ user: { id: user.id } });
     }
 
+    if (secrets.lastResetEmailSentAt) {
+      const timeSince = Date.now() - secrets.lastResetEmailSentAt.getTime();
+      if (timeSince < 15 * 60 * 1000) {
+        const waitMinutes = Math.ceil((15 * 60 * 1000 - timeSince) / 60000);
+        throw new BadRequestError(
+          `Нещодавно ви вже робили цей запит, зачекайте ще ${waitMinutes} хвилин перед наступною спробою.`,
+        );
+      }
+    }
+
+    const resetToken = uuidv4();
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
     secrets.resetPasswordToken = resetToken;
     secrets.resetPasswordExpires = resetExpires;
+    secrets.lastResetEmailSentAt = new Date();
 
     await userSecretsRepository.save(secrets);
 
