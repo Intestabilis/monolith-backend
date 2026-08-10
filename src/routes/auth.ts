@@ -34,6 +34,24 @@ router.post(
   authController.resendActivation,
 );
 
+router.post(
+  "/forgot-password",
+  validate({ body: z.object({ email: z.email() }) }),
+  authController.forgotPassword,
+);
+
+router.post(
+  "/reset-password",
+  validate({
+    body: z.object({
+      token: z.string(),
+      // CHANGE to proper password validation/maybe separate it for all password validations somewhere
+      newPassword: z.string().min(6),
+    }),
+  }),
+  authController.resetPassword,
+);
+
 router.get("/refresh", authController.refresh);
 
 router.get("/status", authMiddleware, authController.getStatus);

@@ -128,6 +128,40 @@ const authController = {
       next(err);
     }
   },
+
+  forgotPassword: async function (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const { email } = req.body;
+      await userService.requestPasswordReset(email);
+
+      return res.json({
+        message:
+          "Інструкції з відновлення пароля було надіслано на вказаний email",
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  resetPassword: async function (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) {
+    try {
+      const { token, newPassword } = req.body;
+      await userService.resetPassword(token, newPassword);
+      return res.json({
+        message: "Пароль успішно змінено",
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };
 
 export default authController;

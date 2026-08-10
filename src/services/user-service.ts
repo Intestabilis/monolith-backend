@@ -31,7 +31,7 @@ const userService = {
     const passwordHash = await bcrypt.hash(password, 4);
 
     const activationLink = uuidv4();
-    const activationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const activationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
 
     const secrets = userSecretsRepository.create({
       activationLink,
@@ -143,7 +143,7 @@ const userService = {
       throw new BadRequestError("Account is already activated");
 
     const newActivationLink = uuidv4();
-    const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
 
     let secrets = user.secrets;
 
@@ -219,6 +219,70 @@ const userService = {
       throw new UnauthenticatedError("There is no more user with this id!");
     const userStatus = { id: user.id, isActivated: user.isActivated };
     return userStatus;
+  },
+
+  // maybe should separate these and other auth methods in it's own service later
+
+  requestPasswordReset: async function (email: string) {
+    const user = await userRepository.findOne({
+      where: { email },
+      relations: { secrets: true },
+    });
+
+    // REVIEW I guess we should do silent return there? Toast with this error on front-end doesn't make sense since users should know their email?
+    if (!user) return;
+    // if (!user) throw new NotFoundError("Користувач з таким email не існує");
+
+    const resetToken = uuidv4();
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    let secrets = user.secrets;
+
+    // REVIEW this fallback + fallback in resendActivation
+    // fallback if secrets do not exist for some reason
+    if (!secrets) {
+      secrets = userSecretsRepository.create({ user: { id: user.id } });
+    }
+
+    secrets.resetPasswordToken = resetToken;
+    secrets.resetPasswordExpires = resetExpires;
+
+    await userSecretsRepository.save(secrets);
+
+    emailService
+      .sendPasswordResetLink(user.email, resetToken)
+      .catch((error) => {
+        console.error(`Failed to send password reset to ${user.email}:`, error);
+      });
+  },
+
+  resetPassword: async function (token: string, newPassword: string) {
+    const secrets = await userSecretsRepository.findOne({
+      where: { resetPasswordToken: token },
+      relations: { user: true },
+    });
+
+    if (!secrets) {
+      throw new BadRequestError("Недійсне посилання для скидання паролю");
+    }
+
+    if (
+      secrets.resetPasswordExpires &&
+      secrets.resetPasswordExpires < new Date()
+    ) {
+      throw new BadRequestError("Час дії посилання вийшов, спробуйте заново");
+    }
+
+    const user = secrets.user;
+
+    // CHANGE salt
+    user.passwordHash = await bcrypt.hash(newPassword, 4);
+
+    secrets.resetPasswordToken = null;
+    secrets.resetPasswordExpires = null;
+
+    await userRepository.save(user);
+    await userSecretsRepository.save(secrets);
   },
 };
 
