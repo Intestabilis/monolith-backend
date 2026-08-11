@@ -5,6 +5,8 @@ import { CampaignMember } from "../entities/CampaignMember.js";
 import { v4 as uuidv4 } from "uuid";
 import NotFoundError from "../exceptions/not-found.js";
 import BadRequestError from "../exceptions/bad-request.js";
+import { mapCampaignMember } from "../mappers/campaign-mapper.js";
+import type { CampaignMemberDTO } from "../schemas/user.schema.js";
 
 const inviteRepository = AppDataSource.getRepository(CampaignInvite);
 const memberRepository = AppDataSource.getRepository(CampaignMember);
@@ -81,20 +83,20 @@ const partyService = {
     // }
   },
 
-  getPartyMembers: async function (campaignId: string) {
-    // getting all users
+  getPartyMembers: async function (
+    campaignId: string,
+  ): Promise<CampaignMemberDTO[]> {
     const members = await memberRepository.find({
       where: { campaignId },
-      relations: { user: true },
+      relations: {
+        user: {
+          profile: true,
+        },
+      },
       order: { joinedAt: "ASC" },
     });
 
-    return members.map((member) => ({
-      id: member.user.id,
-      username: member.user.username,
-      avatarUrl: member.user.avatarUrl,
-      joinedAt: member.joinedAt.toISOString(),
-    }));
+    return members.map(mapCampaignMember);
   },
 };
 

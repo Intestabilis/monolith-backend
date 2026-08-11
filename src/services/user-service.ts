@@ -4,15 +4,18 @@ import { User } from "../entities/User.js";
 
 import bcrypt from "bcrypt";
 import tokenService from "./token-service.js";
-import type { UserTokenDTO } from "../schemas/user.schema.js";
+import type { UpdateProfileDTO, UserTokenDTO } from "../schemas/user.schema.js";
 import UnauthenticatedError from "../exceptions/unauthenticated.js";
 import BadRequestError from "../exceptions/bad-request.js";
 import NotFoundError from "../exceptions/not-found.js";
 import emailService from "./email-service.js";
 import { UserSecrets } from "../entities/UserSecrets.js";
+import { UserProfile } from "../entities/UserProfile.js";
+import { mapUserProfileDTO } from "../mappers/user-mapper.js";
 
 const userRepository = AppDataSource.getRepository(User);
 const userSecretsRepository = AppDataSource.getRepository(UserSecrets);
+const userProfileRepository = AppDataSource.getRepository(UserProfile);
 
 const userService = {
   createUser: async function (
@@ -206,18 +209,47 @@ const userService = {
     return { ...tokens, user: userDto };
   },
 
-  getUserById: async function (id: string) {
-    const user = await userRepository.findOneBy({ id });
+  getUserProfile: async function (id: string) {
+    const user = await userRepository.findOne({
+      where: { id },
+      relations: { profile: true },
+    });
     if (!user) throw new NotFoundError("There is no user with this id");
 
-    const userDto = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      isActivated: user.isActivated,
-      avatarUrl: user.avatarUrl,
-    };
-    return userDto;
+    return mapUserProfileDTO(user);
+  },
+
+  updateUserProfile: async function (
+    userId: string,
+    profileData: UpdateProfileDTO,
+  ) {
+    // CHANGE before prod reset all test data + change to const (secrets too) since this should be handled by migrations me think
+    let profile = await userProfileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!profile) {
+      profile = userProfileRepository.create({ user: { id: userId } });
+    }
+
+    if (profileData.bio !== undefined) profile.bio = profileData.bio;
+    if (profileData.pronouns !== undefined)
+      profile.pronouns = profileData.pronouns;
+    if (profileData.timezone !== undefined)
+      profile.timezone = profileData.timezone;
+    if (profileData.favoriteSystems !== undefined)
+      profile.favoriteSystems = profileData.favoriteSystems;
+    if (profileData.playstyles !== undefined)
+      profile.playstyles = profileData.playstyles;
+
+    await userProfileRepository.save(profile);
+
+    const updatedUser = await userRepository.findOne({
+      where: { id: userId },
+      relations: { profile: true },
+    });
+
+    return updatedUser;
   },
 
   getUserStatus: async function (id: string) {

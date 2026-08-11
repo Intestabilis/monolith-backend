@@ -4,6 +4,10 @@ import { CampaignMember } from "../entities/CampaignMember.js";
 import { User } from "../entities/User.js";
 import NotFoundError from "../exceptions/not-found.js";
 import UnauthorizedError from "../exceptions/unauthorized.js";
+import {
+  mapCampaignContextDTO,
+  mapCampaignPreview,
+} from "../mappers/campaign-mapper.js";
 import type {
   CampaignRole,
   CreateCampaignDTO,
@@ -51,20 +55,7 @@ const campaignService = {
 
     const savedCampaign = await campaignRepository.save(newCampaign);
 
-    return {
-      data: {
-        id: savedCampaign.id,
-        title: savedCampaign.title,
-        imageUrl: savedCampaign.imageUrl,
-        masterUsername: user.username,
-        createdAt: savedCampaign.createdAt.toISOString(),
-        updatedAt: savedCampaign.updatedAt.toISOString(),
-      },
-      meta: {
-        userRole: "master",
-        permissions: { canEditLore: true, canInvitePlayers: true },
-      },
-    };
+    return mapCampaignContextDTO(savedCampaign, "master");
   },
 
   updateCampaign: async function (
@@ -87,37 +78,7 @@ const campaignService = {
 
     const updatedCampaign = await campaignRepository.save(campaign);
 
-    const members = (updatedCampaign.members || []).map((member) => ({
-      id: member.user.id,
-      username: member.user.username,
-      avatarUrl: member.user.avatarUrl || null,
-      joinedAt: member.joinedAt.toISOString(),
-    }));
-
-    console.log(members);
-
-    return {
-      data: {
-        id: campaign.id,
-        title: campaign.title,
-        imageUrl: campaign.imageUrl,
-        master: {
-          id: campaign.master.id,
-          username: campaign.master.username,
-          avatarUrl: campaign.master.avatarUrl,
-        },
-        createdAt: campaign.createdAt.toISOString(),
-        updatedAt: campaign.updatedAt.toISOString(),
-        members: members,
-      },
-      meta: {
-        userRole: "master",
-        permissions: {
-          canEditLore: true,
-          canInvitePlayers: true,
-        },
-      },
-    };
+    return mapCampaignContextDTO(updatedCampaign, "master");
   },
 
   updateCampaignContent: async function (
@@ -180,19 +141,7 @@ const campaignService = {
       order: { updatedAt: "DESC" },
     });
 
-    return campaigns.map((campaign) => ({
-      data: {
-        id: campaign.id,
-        title: campaign.title,
-        imageUrl: campaign.imageUrl,
-        masterUsername: campaign.master.username,
-        createdAt: campaign.createdAt.toISOString(),
-        updatedAt: campaign.updatedAt.toISOString(),
-      },
-      meta: {
-        userRole: "player",
-      },
-    }));
+    return campaigns.map((campaign) => mapCampaignPreview(campaign, "player"));
   },
 
   getUserMasterCampaigns: async function (userId: string) {
@@ -210,19 +159,7 @@ const campaignService = {
       order: { updatedAt: "DESC" },
     });
 
-    return campaigns.map((campaign) => ({
-      data: {
-        id: campaign.id,
-        title: campaign.title,
-        imageUrl: campaign.imageUrl,
-        masterUsername: campaign.master.username,
-        createdAt: campaign.createdAt.toISOString(),
-        updatedAt: campaign.updatedAt.toISOString(),
-      },
-      meta: {
-        userRole: "master",
-      },
-    }));
+    return campaigns.map((campaign) => mapCampaignPreview(campaign, "master"));
   },
 
   getUserAllCampaigns: async function (userId: string) {
@@ -240,19 +177,12 @@ const campaignService = {
       order: { updatedAt: "DESC" },
     });
 
-    return campaigns.map((campaign) => ({
-      data: {
-        id: campaign.id,
-        title: campaign.title,
-        imageUrl: campaign.imageUrl,
-        masterUsername: campaign.master.username,
-        createdAt: campaign.createdAt.toISOString(),
-        updatedAt: campaign.updatedAt.toISOString(),
-      },
-      meta: {
-        userRole: campaign.master.id === userId ? "master" : "player",
-      },
-    }));
+    return campaigns.map((campaign) =>
+      mapCampaignPreview(
+        campaign,
+        campaign.master.id === userId ? "master" : "player",
+      ),
+    );
   },
 
   // REVIEW if anytime will think about implementing other roles (co-DM etc, then should modify join table and work with it instead)
@@ -282,7 +212,7 @@ const campaignService = {
         id: true,
         title: true,
         imageUrl: true,
-        master: { id: true, username: true, avatarUrl: true },
+        master: { id: true, username: true, profile: true },
         createdAt: true,
         updatedAt: true,
       },
@@ -291,35 +221,7 @@ const campaignService = {
     if (!campaign)
       throw new NotFoundError("Campaign with this id is not found");
 
-    const members = (campaign.members || []).map((member) => ({
-      id: member.user.id,
-      username: member.user.username,
-      avatarUrl: member.user.avatarUrl || null,
-      joinedAt: member.joinedAt.toISOString(),
-    }));
-
-    return {
-      data: {
-        id: campaign.id,
-        title: campaign.title,
-        imageUrl: campaign.imageUrl,
-        master: {
-          id: campaign.master.id,
-          username: campaign.master.username,
-          avatarUrl: campaign.master.avatarUrl,
-        },
-        createdAt: campaign.createdAt.toISOString(),
-        updatedAt: campaign.updatedAt.toISOString(),
-        members: members,
-      },
-      meta: {
-        userRole: role,
-        permissions: {
-          canEditLore: role === "master",
-          canInvitePlayers: role === "master",
-        },
-      },
-    };
+    return mapCampaignContextDTO(campaign, role);
   },
 
   getCampaignContent: async function (campaignId: string) {
