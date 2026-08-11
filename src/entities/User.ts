@@ -10,6 +10,7 @@ import { Campaign } from "./Campaign.js";
 import { Token } from "./Token.js";
 import { CampaignMember } from "./CampaignMember.js";
 import { UserSecrets } from "./UserSecrets.js";
+import { UserProfile } from "./UserProfile.js";
 
 @Entity()
 export class User {
@@ -21,9 +22,6 @@ export class User {
 
   @Column({ unique: true, type: "varchar" })
   username!: string;
-
-  @Column({ type: "varchar", nullable: true })
-  avatarUrl?: string | null;
 
   @Column({ type: "varchar" })
   passwordHash!: string;
@@ -50,4 +48,7 @@ export class User {
     onDelete: "CASCADE",
   })
   secrets!: UserSecrets;
+
+  @OneToOne(() => UserProfile, (profile) => profile.user, { cascade: true })
+  profile!: UserProfile;
 }
