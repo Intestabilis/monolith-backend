@@ -224,6 +224,7 @@ const userService = {
     profileData: UpdateProfileDTO,
   ) {
     // CHANGE before prod reset all test data + change to const (secrets too) since this should be handled by migrations me think
+    // also ig throw NotFound exception if user not found? I mean at the start of the function
     let profile = await userProfileRepository.findOne({
       where: { user: { id: userId } },
     });
@@ -249,7 +250,11 @@ const userService = {
       relations: { profile: true },
     });
 
-    return updatedUser;
+    // CHANGE at least to a proper text
+    if (!updatedUser)
+      throw new NotFoundError("Після оновлення сталася помилка");
+
+    return mapUserProfileDTO(updatedUser);
   },
 
   getUserStatus: async function (id: string) {
