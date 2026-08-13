@@ -207,12 +207,20 @@ const campaignService = {
   getCampaignContext: async function (campaignId: string, role: CampaignRole) {
     const campaign = await campaignRepository.findOne({
       where: { id: campaignId },
-      relations: { master: true, members: { user: true } },
+      relations: {
+        master: { profile: true },
+        members: { user: { profile: true } },
+      },
       select: {
         id: true,
         title: true,
         imageUrl: true,
-        master: { id: true, username: true, profile: true },
+        // probably should do something similar to members but honestly too scared by this level of nesting already
+        master: {
+          id: true,
+          username: true,
+          profile: { avatarUrl: true, pronouns: true },
+        },
         createdAt: true,
         updatedAt: true,
       },
