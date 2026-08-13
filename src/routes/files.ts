@@ -1,7 +1,10 @@
 import { Router } from "express";
 import authMiddleware from "../middlewares/auth-middleware.js";
 import { requireCampaignRole } from "../middlewares/campaign-role-middleware.js";
-import { uploadEditorImage } from "../middlewares/upload-middleware.js";
+import {
+  uploadAvatar,
+  uploadEditorImage,
+} from "../middlewares/upload-middleware.js";
 import validate from "express-zod-safe";
 import z from "zod";
 import fileController from "../controllers/file-controller.js";
@@ -19,6 +22,13 @@ router.post(
   validate({ params: { campaignId: z.uuid() } }),
   uploadEditorImage.single("image"),
   fileController.uploadCampaignEditorImage,
+);
+
+router.post(
+  "/me/avatar",
+  authMiddleware,
+  uploadAvatar.single("image"),
+  fileController.uploadAvatar,
 );
 
 export default router;

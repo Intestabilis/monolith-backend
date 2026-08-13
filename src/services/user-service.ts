@@ -257,6 +257,31 @@ const userService = {
     return mapUserProfileDTO(updatedUser);
   },
 
+  updateUserAvatar: async function (userId: string, imageUrl: string) {
+    const profile = await userProfileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    // more prod variant, should CHANGE other's with let to const and do this instead of creating profile if there's nothing
+    if (!profile) {
+      throw new NotFoundError("Не було знайдено профіль юзера з таким id");
+    }
+
+    profile.avatarUrl = imageUrl;
+    await userProfileRepository.save(profile);
+
+    // I don't think that this workaround to get full user data is the most efficient way to do it, probably should change later
+    const updatedUser = await userRepository.findOne({
+      where: { id: userId },
+      relations: { profile: true },
+    });
+
+    if (!updatedUser)
+      throw new NotFoundError("Після оновлення даних сталася помилка");
+
+    return mapUserProfileDTO(updatedUser);
+  },
+
   getUserStatus: async function (id: string) {
     // REVIEW can add global roles like user, admin, some other needed info in the future (to justify this as an additional logic with already existing getUserById)
     const user = await userRepository.findOne({
